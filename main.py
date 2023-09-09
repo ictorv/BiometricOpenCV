@@ -4,6 +4,7 @@ import pickle
 import numpy as np
 import face_recognition
 import time
+import requests
 import cvzone
 
 cap=cv2.VideoCapture(0,cv2.CAP_DSHOW)
@@ -19,15 +20,32 @@ imgModeList=[] #List contining mode path
 for path in modePathList:
     imgModeList.append(cv2.imread(os.path.join(ModeFolder,path)))
 
+'''
 #Importing Images
 Folder='Images'
 PathList=os.listdir(Folder)
 imgList=[] #List contining mode path
 ID=[]
+
+
 for path in PathList:
     imgList.append(cv2.imread(os.path.join(Folder,path)))
     ID.append(os.path.splitext(path)[0])
 #print(ID)
+
+'''
+image_urls=['https://media.licdn.com/dms/image/D5603AQH7I_3kdCXXrw/profile-displayphoto-shrink_800_800/0/1685678390121?e=1699488000&v=beta&t=Aa9vfE3QuBMZ3vYLZ1Bf2gQQ9B1IJKJU1R-MyFa4szQ']
+imgList = []  # List containing image data
+ID = []
+
+for url in image_urls:
+    # Download the image from the URL
+    response = requests.get(url) #Getting images
+    img_array = np.frombuffer(response.content, dtype=np.uint8) #Converting into numpy array
+    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR) #Changinh into image
+
+    imgList.append(img)
+    ID.append(os.path.splitext(os.path.basename(url))[0])
 
 def Encoding(imagesList):
     encodeList=[]
@@ -74,15 +92,16 @@ while True:
     #Loop through each encodings
 
     for encodeFace, faceLoc in zip(encodedCurrFrame,faceCurrFrame):
-        matches =face_recognition.compare_faces(encodeListKnown,encodeFace)
+        matches=face_recognition.compare_faces(encodeListKnown,encodeFace,tolerance=0.40)
         faceDistance=face_recognition.face_distance(encodeListKnown,encodeFace) #lower the face distance better the match
+        print(faceDistance)
         #print("matches",matches)
         #print("Face Distance",faceDistance)
 
         matchIndex=np.argmin(faceDistance)
         #print("Match INdex",matchIndex)
 
-        if matches[matchIndex]:
+        if matches[matchIndex] and faceDistance<=0.40:
             print("Known Face Detected")
             known_face_detected = True
 
